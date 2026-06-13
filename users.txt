@@ -1,0 +1,6 @@
+admin1 adminpass Admin
+jason staff123 Admin
+eexuan staff456 Admin
+shinru pass123 Normal_Customer
+yuxuan vip789 Premium_Customer
+yungsin secure456 Normal_Customer
