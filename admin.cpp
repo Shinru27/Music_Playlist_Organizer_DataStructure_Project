@@ -359,6 +359,7 @@ public:
 
     // TEAMMATE TODO (Eexuan/Jason): Hook these functions to complete administrative assignments
     void displayMenu() override;
+    void adminMenu(DoublyLinkedList& pool);
     void addSongToPool(DoublyLinkedList& pool);
     void editSongInPool(DoublyLinkedList& pool);
     void displayMusicPool(const DoublyLinkedList& pool);
@@ -454,9 +455,17 @@ public:
 };
 
 // Admin Modules - Eexuan/Jason 
-void Admin::displayMenu() {
+void Admin::displayMenu()
+{
+    cout << "\nAdmin menu requires music pool access.\n";
+}
+
+void Admin::adminMenu(DoublyLinkedList& pool)
+{
     int choice = -1;
-    while (true) {
+
+    while (true)
+    {
         cout << "\n===============================" << endl;
         cout << "    STAFF / ADMIN MODULE MENU  " << endl;
         cout << "===============================" << endl;
@@ -471,21 +480,22 @@ void Admin::displayMenu() {
         cout << "Enter selection option (0-9): ";
         cin >> choice;
 
-        if (choice == 0) {
-            cout << "[System] Logging out out from staff credentials session.\n";
+        if (choice == 0)
+        {
+            cout << "[System] Logging out from admin session.\n";
             break;
         }
 
-        // TEAMMATE TODO: Implement the switch control behaviors mapping to functions below
-        switch (choice) {
-            case 3: cout << "Executing: Add New Song...\n"; break;
-            case 4: cout << "Executing: Edit/Update Song...\n"; break;
-            case 5: cout << "Executing: Display Music Pool...\n"; break;
-            case 6: cout << "Executing: Search Song...\n"; break;
-            case 7: cout << "Executing: Sort Music Pool...\n"; break;
-            case 8: cout << "Executing: Delete Song...\n"; break;
-            case 9: cout << "Executing: Summary Report...\n"; break;
-            default: cout << "[Warning] Choice out of bounds. Retry!\n"; break;
+        switch (choice)
+        {
+            case 3: addSongToPool(pool); break;
+            case 4: editSongInPool(pool); break;
+            case 5: displayMusicPool(pool); break;
+            case 6: searchSongInPool(pool); break;
+            case 7: sortMusicPool(pool); break;
+            case 8: deleteSongFromPool(pool); break;
+            case 9: generateSystemReport(pool); break;
+            default: cout << "[Warning] Invalid choice.\n"; break;
         }
     }
 }
@@ -774,9 +784,12 @@ class SystemEngine {
 private:
     DoublyLinkedList globalMusicPool; 
     User* currentUser; 
-
+	
+	string adminUsername;
+	string adminPassword;
+		
 public:
-    SystemEngine() : currentUser(nullptr) {}
+    SystemEngine() : currentUser(nullptr), adminUsername("admin"), adminPassword("1234") {}
     ~SystemEngine() { if(currentUser) delete currentUser; }
 
     void initSystem() {
@@ -824,10 +837,31 @@ public:
             }
             
             // TEAMMATE TODO: Option 2: Account Authentication Business Flows
-            if (choice == 2) {
-                //
-            }
-
+            if (choice == 2)
+			{
+			    string username;
+			    string password;
+			
+			    cout << "\n========== ADMIN LOGIN ==========\n";
+			    cout << "Username: ";
+			    cin >> username;
+			
+			    cout << "Password: ";
+			    cin >> password;
+			
+			    if (username == adminUsername && password == adminPassword)
+			    {
+			        cout << "\n[Success] Admin login successful!\n";
+			
+			        Admin admin(username, password);
+			        
+					admin.adminMenu(globalMusicPool);
+			    }
+			    else
+			    {
+			        cout << "\n[Error] Invalid username or password!\n";
+			    }
+			}
             if (choice == 0) { 
                 //
                 break; 
