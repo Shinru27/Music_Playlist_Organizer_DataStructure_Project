@@ -222,7 +222,9 @@ private:
             else if (criteria == 2) condition = (arr[j].duration < pivot.duration); // Criteria 2: Sort by Length (Ascending)
             else if (criteria == 3) condition = (arr[j].popularity > pivot.popularity); // Criteria 3: Sort by Popularity/Playcount Leaderboard (Descending)
             else if (criteria == 4) condition = (arr[j].title < pivot.title);     // Criteria 4: Sort by Title Alphabetical order (Ascending)
-
+			else if (criteria == 5) condition = (arr[j].artist < pivot.artist);
+			else if (criteria == 6) condition = (arr[j].genre < pivot.genre);
+			
             if (condition) {
                 i++;
                 swapSongs(arr[i], arr[j]);
@@ -363,7 +365,7 @@ public:
     void addSongToPool(DoublyLinkedList& pool);
     void editSongInPool(DoublyLinkedList& pool);
     void displayMusicPool(const DoublyLinkedList& pool);
-    void searchSongInPool(const DoublyLinkedList& pool);
+    void searchSongInPool(DoublyLinkedList& pool);
     void sortMusicPool(DoublyLinkedList& pool);
     void deleteSongFromPool(DoublyLinkedList& pool);
     void generateSystemReport(const DoublyLinkedList& pool); 
@@ -401,7 +403,7 @@ void Admin::adminMenu(DoublyLinkedList& pool)
     while (true)
     {
         cout << "\n===============================" << endl;
-        cout << "    STAFF / ADMIN MODULE MENU  " << endl;
+        cout << "    STAFF / ADMIN MENU  " << endl;
         cout << "===============================" << endl;
         cout << "1. Add New Song" << endl;
         cout << "2. Edit/Update Song" << endl;
@@ -411,7 +413,8 @@ void Admin::adminMenu(DoublyLinkedList& pool)
         cout << "6. Delete Song" << endl;
         cout << "7. Summary Report" << endl;
         cout << "0. Logout & Exit" << endl;
-        cout << "Enter selection option (0-9): ";
+        cout << "===============================" << endl;
+        cout << "\nEnter selection option (0-9): ";
         cin >> choice;
 
         if (choice == 0)
@@ -429,7 +432,7 @@ void Admin::adminMenu(DoublyLinkedList& pool)
             case 5: sortMusicPool(pool); break;
             case 6: deleteSongFromPool(pool); break;
             case 7: generateSystemReport(pool); break;
-            default: cout << "[Warning] Invalid choice.\n"; break;
+            default: cout << "\n[Warning] Invalid choice.\n"; break;
         }
     }
 }
@@ -440,26 +443,37 @@ void Admin::addSongToPool(DoublyLinkedList& pool)
     Song s;
 
     cout << "\n========== ADD NEW SONG ==========\n";
+    cout << "Enter 0 to return.\n";
 
-    try
-	{
-	    cout << "Enter Song ID: ";
-	    cin >> s.id;
-	
-	    if(cin.fail())
-	    {
-	        throw "Invalid Song ID!";
-	    }
-	}
-	catch(const char* msg)
-	{
-	    cout << msg << endl;
-	
-	    cin.clear();
-	    cin.ignore(1000, '\n');
-	
-	    return;
-	}
+    string input;
+
+    cout << "Continue? (1 = Yes, 0 = Back): ";
+    cin >> input;
+
+    if(input == "0")
+    {
+        return;
+    }
+
+    int maxId = 1000;
+
+    ifstream inFile("music_pool.txt");
+
+    Song temp;
+
+    while(inFile >> temp)
+    {
+        if(temp.id > maxId)
+        {
+            maxId = temp.id;
+        }
+    }
+
+    inFile.close();
+
+    s.id = maxId + 1;
+
+    cout << "Generated Song ID: " << s.id << endl;
 
     cout << "Enter Song Title (use _ instead of space): ";
     cin >> s.title;
@@ -478,37 +492,45 @@ void Admin::addSongToPool(DoublyLinkedList& pool)
 
     pool.append(s);
 
-    ofstream file("music_pool.txt", ios::app);
-    file << s << endl;
-    file.close();
+    ofstream outFile("music_pool.txt", ios::app);
+
+    outFile << s << endl;
+
+    outFile.close();
 
     cout << "\n[Success] Song added successfully!\n";
 }
+
 void Admin::editSongInPool(DoublyLinkedList& pool)
 {
     int id;
     Node* current = pool.getHead();
 
     cout << "\n========== EDIT SONG ==========\n";
+
     try
-	{
-	    cout << "Enter Song ID to edit: ";
-	    cin >> id;
-	
-	    if(cin.fail())
-	    {
-	        throw "Invalid Song ID!";
-	    }
-	}
-	catch(const char* msg)
-	{
-	    cout << msg << endl;
-	
-	    cin.clear();
-	    cin.ignore(1000, '\n');
-	
-	    return;
-	}
+    {
+        cout << "Enter Song ID to edit (0 = Back): ";
+        cin >> id;
+
+        if(cin.fail())
+        {
+            throw "Invalid Song ID!";
+        }
+        else if(id == 0)
+        {
+            return;
+        }
+    }
+    catch(const char* msg)
+    {
+        cout << msg << endl;
+
+        cin.clear();
+        cin.ignore(1000, '\n');
+
+        return;
+    }
 
     while (current != nullptr)
     {
@@ -530,8 +552,8 @@ void Admin::editSongInPool(DoublyLinkedList& pool)
             cin >> current->data.duration;
 
             saveMusicPoolToFile(pool);
-			cout << "\n[Success] Song updated successfully!\n";
-			return;
+            cout << "\n[Success] Song updated successfully!\n";
+            return;
         }
 
         current = current->next;
@@ -539,18 +561,19 @@ void Admin::editSongInPool(DoublyLinkedList& pool)
 
     cout << "\n[Error] Song ID not found.\n";
 }
+
 void Admin::displayMusicPool(const DoublyLinkedList& pool)
 {
     Node* current = pool.getHead();
 
-    cout << "\n========== MUSIC POOL ==========\n";
+    cout << "\n==================================  MUSIC POOL  ========================================\n";
 
     if (current == nullptr)
     {
         cout << "No songs available in the music pool.\n";
         return;
     }
-    
+
     cout << left
          << setw(6)  << "ID"
          << setw(25) << "Title"
@@ -560,50 +583,135 @@ void Admin::displayMusicPool(const DoublyLinkedList& pool)
          << setw(10) << "Duration" << endl;
     cout << string(88, '-') << endl;
 
-    while (current != nullptr)
-    {
-        cout << left
-             << setw(6)  << current->data.id
-             << setw(25) << current->data.title
-             << setw(20) << current->data.artist
-             << setw(15) << current->data.genre
-             << setw(12) << current->data.popularity
-             << setw(10) << current->data.duration
-             << endl;
-
-        current = current->next;
-    }
+	while (current != nullptr)
+	{
+	    cout << left
+	         << setw(6)  << current->data.id
+	         << setw(25) << current->data.title
+	         << setw(20) << current->data.artist
+	         << setw(15) << current->data.genre
+	         << setw(12) << current->data.popularity
+	         << setw(10) << current->data.duration
+	         << endl;
+	
+	    current = current->next;
+	}
+	
+	int backChoice;
+	cout << "\n================================================================================="<<endl;
+	cout << "\nEnter 0 to back :";
+	cin >> backChoice;
+	
+	while(backChoice != 0)
+	{
+	    cout << "Please enter 0 to return: ";
+	    cin >> backChoice;
+	}
 }
-void Admin::searchSongInPool(const DoublyLinkedList& pool)
+
+void Admin::searchSongInPool(DoublyLinkedList& pool)
 {
     int id;
 
     cout << "\n========== SEARCH SONG ==========\n";
-    cout << "Enter Song ID: ";
-    cin >> id;
 
-    int result = AlgorithmManager::searchSong(pool, id);
+    try
+    {
+        cout << "Enter Song ID (0 = Back): ";
+        cin >> id;
 
-    if(result != -1)
-        cout << "\nSong Found!\n";
+        if(cin.fail())
+        {
+            throw "Invalid Song ID!";
+        }
+        else if(id == 0)
+        {
+            return;
+        }
+    }
+    catch(const char* msg)
+    {
+        cout << msg << endl;
+
+        cin.clear();
+        cin.ignore(1000, '\n');
+
+        return;
+    }
+
+    DoublyLinkedList tempPool = pool;
+    AlgorithmManager::sortLinkedList(tempPool, 1);
+    int result = AlgorithmManager::searchSong(tempPool, id);
+
+    if (result != -1)
+    {
+        Node* current = pool.getHead();
+
+        while (current != nullptr)
+        {
+            if (current->data.id == id)
+            {
+                cout << "\nSong Found!\n\n";
+                cout << "ID        : " << current->data.id << endl;
+                cout << "Title     : " << current->data.title << endl;
+                cout << "Artist    : " << current->data.artist << endl;
+                cout << "Genre     : " << current->data.genre << endl;
+                cout << "Popularity: " << current->data.popularity << endl;
+                cout << "Duration  : " << current->data.duration << endl;
+                return;
+            }
+
+            current = current->next;
+        }
+    }
     else
+    {
         cout << "\nSong Not Found!\n";
+    }
 }
+
 void Admin::sortMusicPool(DoublyLinkedList& pool)
 {
     int choice;
 
     cout << "\n========== SORT MUSIC POOL ==========\n";
-    cout << "1. Sort by Song ID\n";
-    cout << "2. Sort by Duration\n";
-    cout << "3. Sort by Popularity\n";
-    cout << "4. Sort by Title\n";
-    cout << "Enter your choice: ";
-    cin >> choice;
+	cout << "1. Sort by Song ID\n";
+	cout << "2. Sort by Duration\n";
+	cout << "3. Sort by Popularity\n";
+	cout << "4. Sort by Title\n";
+	cout << "5. Sort by Artist\n";
+	cout << "6. Sort by Genre\n";
+	cout << "0. Back\n";
 
-    if (choice >= 1 && choice <= 4)
+    try
+    {
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+        if(cin.fail())
+        {
+            throw "Invalid sorting choice!";
+        }
+        else if(choice == 0)
+        {
+            return;
+        }
+    }
+    catch(const char* msg)
+    {
+        cout << "\n[Error] " << msg << endl;
+
+        cin.clear();
+        cin.ignore(1000, '\n');
+
+        return;
+    }
+
+    if(choice >= 1 && choice <= 6)
     {
         AlgorithmManager::sortLinkedList(pool, choice);
+        saveMusicPoolToFile(pool);
+
         cout << "\n[Success] Music pool sorted successfully!\n";
         displayMusicPool(pool);
     }
@@ -612,36 +720,43 @@ void Admin::sortMusicPool(DoublyLinkedList& pool)
         cout << "\n[Error] Invalid sorting choice.\n";
     }
 }
+
 void Admin::deleteSongFromPool(DoublyLinkedList& pool)
 {
     int id;
 
     cout << "\n========== DELETE SONG ==========\n";
+
     try
-	{
-	    cout << "Enter Song ID: ";
-	    cin >> id;
-	
-	    if(cin.fail())
-	    {
-	        throw "Invalid Song ID!";
-	    }
-	}
-	catch(const char* msg)
-	{
-	    cout << msg << endl;
-	
-	    cin.clear();
-	    cin.ignore(1000, '\n');
-	
-	    return;
-	}
+    {
+        cout << "Enter Song ID (0 = Back): ";
+        cin >> id;
+
+        if(cin.fail())
+        {
+            throw "Invalid Song ID!";
+        }
+        else if(id == 0)
+        {
+            return;
+        }
+    }
+    catch(const char* msg)
+    {
+        cout << msg << endl;
+
+        cin.clear();
+        cin.ignore(1000, '\n');
+
+        return;
+    }
 
     pool.removeNode(id);
-	saveMusicPoolToFile(pool);
-	
-	cout << "\nDelete operation completed.\n";
+    saveMusicPoolToFile(pool);
+
+    cout << "\nDelete operation completed.\n";
 }
+
 void Admin::generateSystemReport(const DoublyLinkedList& pool)
 {
     Node* current = pool.getHead();
@@ -656,24 +771,29 @@ void Admin::generateSystemReport(const DoublyLinkedList& pool)
         current = current->next;
     }
 
-    ofstream file("admin_report.txt");
-
-    file << "===== ADMIN REPORT =====\n";
-    file << "Total Songs: " << totalSongs << endl;
+    double averageDuration = 0;
 
     if(totalSongs > 0)
     {
-        file << "Average Duration: "
-             << totalDuration / totalSongs
-             << " seconds\n";
+        averageDuration = (double)totalDuration / totalSongs;
     }
+
+    cout << "\n========== ADMIN REPORT ==========\n";
+    cout << left << setw(20) << "Total Songs" << ": " << totalSongs << endl;
+    cout << left << setw(20) << "Total Duration" << ": " << totalDuration << endl;
+    cout << left << setw(20) << "Average Duration" << ": " << averageDuration << endl;
+
+    ofstream file("admin_report.txt");
+
+    file << "========== ADMIN REPORT ==========\n";
+    file << "Total Songs      : " << totalSongs << endl;
+    file << "Total Duration   : " << totalDuration << endl;
+    file << "Average Duration : " << averageDuration << endl;
 
     file.close();
 
     cout << "\nReport generated successfully.\n";
 }
-
-
 
 // -------------------------------------------------------------------
 //   Central Orchestration Driver Engine - yx/ys/ex/js - 
@@ -1021,7 +1141,7 @@ void loadPlaylistFromFile(ifstream& file, Customer& customer, DoublyLinkedList& 
     string countStr = line.substr(pos2 + 1, pos3 - pos2 - 1);
     string songPart = line.substr(pos3 + 1);
 
-    // 手动把 countStr 转成 int
+    // ÊÖ¶¯°Ñ countStr ×ª³É int
     int songCount = 0;
     for (int i = 0; i < (int)countStr.size(); i++) {
         if (countStr[i] >= '0' && countStr[i] <= '9')
@@ -1246,7 +1366,7 @@ void Customer::searchInPlaylist() {
         int targetId;
         cin >> targetId;
 
-        // sort by ID first before binary search 鈥?using Member A's own quickSortSong (criteria 3)
+        // sort by ID first before binary search â€” using Member A's own quickSortSong (criteria 3)
         quickSortSong(0, size - 1, arr, 3);
 
         int result = binarySearchSongById(arr, size, targetId);
@@ -1267,7 +1387,7 @@ void Customer::searchInPlaylist() {
         string title;
         cin >> title;
 
-        // sort by title first before binary search 鈥?using Member A's own quickSortSong (criteria 1)
+        // sort by title first before binary search â€” using Member A's own quickSortSong (criteria 1)
         quickSortSong(0, size - 1, arr, 1);
 
         int result = binarySearchSongByTitle(arr, size, title);
@@ -1900,34 +2020,50 @@ int main() {
             system("cls");
         }else{
         	
-        	//admin register and login
-        if (choice == 1) {
-        	
-        	string username;
-			string password;
-			string adminUsername = "admin";
-			string adminPassword = "1234"; 
-			
-			cout << "\n========== ADMIN LOGIN ==========\n";
-			cout << "Username: ";
-			cin >> username;
-			
-			cout << "Password: ";
-			cin >> password;
-			
-			if (username == adminUsername && password == adminPassword)
-			{
-			    cout << "\n[Success] Admin login successful!\n";
-			
-			    Admin admin(username, password);
-			        
-				admin.adminMenu(globalMusicPool);
-			}
-			else
-			{
-			    cout << "\n[Error] Invalid username or password!\n";
-			}
-			system("cls");
+        // admin login
+		if (choice == 1)
+		{
+		    string username;
+		    string password;
+		
+		    cout << "\n========== ADMIN LOGIN ==========\n";
+		    cout << "Username: ";
+		    cin >> username;
+		
+		    cout << "Password: ";
+		    cin >> password;
+		
+		    ifstream file("users.txt");
+		
+		    string u, p, r;
+		    bool found = false;
+		
+		    while (file >> u >> p >> r)
+		    {
+		        if (u == username && p == password && r == "Admin")
+		        {
+		            found = true;
+		            break;
+		        }
+		    }
+		
+		    file.close();
+		
+		    if (found)
+		    {
+		        cout << "\n[Success] Admin login successful!\n";
+		
+		        Admin admin(username, password);
+				system("cls");
+		        admin.adminMenu(globalMusicPool);
+		    }
+		    else
+		    {
+		        cout << "\n[Error] Invalid admin username or password!\n";
+		        system("pause");
+    			system("cls");
+		    }
+
 		}
  
         else if (choice == 2) {
